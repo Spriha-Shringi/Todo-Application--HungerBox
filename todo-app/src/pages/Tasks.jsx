@@ -1,8 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Clock, Check, Loader2, Edit, Trash2, X, AlertCircle, CheckCircle2, RotateCcw, AlarmClock, Tag } from 'lucide-react';
 import { getTodos, createTodo, updateTodo, deleteTodo } from '../api/todoApi';
+import { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
+
+
+// useEffect(() => {
+//   if (user) {
+//     fetchTasks();
+//   } else {
+//     setTasks([]); 
+//   }
+// }, [user]);
 
 export default function Tasks() {
+  const { user } = useContext(AuthContext);
+
   const [tasks, setTasks] = useState([]);
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
   const [newTask, setNewTask] = useState({
@@ -21,10 +34,14 @@ export default function Tasks() {
   };
 
   useEffect(() => {
-    fetchTasks();
+    if (user) {
+      fetchTasks();
+    } else {
+      setTasks([]); 
+    }
     const interval = setInterval(checkAndUpdateTasks, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   const checkAndUpdateTasks = async () => {
     const now = new Date();
@@ -465,7 +482,7 @@ export default function Tasks() {
                     <p className="text-gray-500 max-w-md mx-auto mb-6">
                       Create your first task by clicking the "New Task" button to get started organizing your workload.
                     </p>
-                    <button
+                    {/* <button
                       onClick={() => {
                         setShowNewTaskForm(true);
                         const tomorrow = new Date();
@@ -476,7 +493,7 @@ export default function Tasks() {
                       className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-200 font-medium inline-flex items-center gap-2"
                     >
                       <span>+</span> Create First Task
-                    </button>
+                    </button> */}
                   </div>
                 ) : (
                   <div>

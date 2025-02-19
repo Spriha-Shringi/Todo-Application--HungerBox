@@ -7,7 +7,7 @@ export default function Navbar() {
 
   return (
     <nav className="bg-blue-600 p-4 text-white flex justify-between">
-      <Link to="/tasks" className="text-xl font-bold">TODO App</Link>
+      {/* <Link to="/tasks" className="text-xl font-bold">TODO App</Link> */}
       <div>
         {user ? (
           <>

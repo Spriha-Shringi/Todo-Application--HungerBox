@@ -18,6 +18,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     logoutUser();
     setUser(null);
+    window.location.href = '/login';
   };
 
   return (
