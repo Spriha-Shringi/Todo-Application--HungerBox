@@ -12,8 +12,8 @@ router.get('/', authMiddleware, async (req, res) => {
 
 // Create Todo
 router.post('/', authMiddleware, async (req, res) => {
-  const { title, deadline } = req.body;
-  const todo = new Todo({ title, deadline, user: req.user.id });
+  const { title, description, deadline } = req.body;
+  const todo = new Todo({ title, description, deadline, user: req.user.id });
   await todo.save();
   res.status(201).json(todo);
 });

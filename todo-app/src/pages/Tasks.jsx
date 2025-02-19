@@ -401,7 +401,10 @@ export default function Tasks() {
                         setError('Title is required');
                         return;
                       }
-                      
+                      if (!newTask.description.trim()) {
+                        setError('Description is required');
+                        return;
+                      }
                       if (!newTask.deadline) {
                         setError('Deadline date is required');
                         return;

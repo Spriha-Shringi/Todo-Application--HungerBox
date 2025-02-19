@@ -3,29 +3,35 @@ import { getToken } from './authApi';
 
 const API_URL = 'http://localhost:5000/api/todos';
 
-const authHeaders = () => ({ headers: { Authorization: `Bearer ${getToken()}` } });
+const authHeaders = () => {
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    console.error("No token found! User must be logged in.");
+    return null; // Returning null prevents sending a bad request
+  }
+
+  return { headers: { Authorization: `Bearer ${token}` } };
+};
+
 
 export const getTodos = async () => {
-  const token = localStorage.getItem('token'); 
+  const headers = authHeaders();  // Get authorization headers
 
-  // Check if the token exists
-  if (!token) {
-    console.error('No token found. Please log in again.');
-    return;
+  if (!headers) {
+    console.warn("Skipping API request: No token available.");
+    return [];  // Return empty array instead of making a request
   }
 
   try {
-    const response = await axios.get('http://localhost:5000/api/todos', {
-      headers: {
-        'Authorization': `Bearer ${token}`, // Attach the token to the request headers
-      },
-    });
-    return response.data; // Handle the successful response
+    const response = await axios.get("http://localhost:5000/api/todos", headers);
+    return response.data; 
   } catch (error) {
-    console.error('Error fetching tasks:', error);
-    throw error; // Rethrow error to be handled elsewhere (like in Tasks.jsx)
+    console.error("Error fetching tasks:", error.response?.data || error.message);
+    throw error;
   }
 };
+
 
 export const createTodo = async (todo) => {
   const response = await axios.post(API_URL, todo, authHeaders());
