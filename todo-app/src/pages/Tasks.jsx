@@ -1,23 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, Check, Loader2, Edit, Trash2, X, AlertCircle, CheckCircle2, RotateCcw, AlarmClock, Tag } from 'lucide-react';
+import { Calendar, Clock, Check, Loader2, Edit, Trash2, X, AlertCircle, CheckCircle2, RotateCcw, AlarmClock, Tag, Search, Filter, SortDesc } from 'lucide-react';
 import { getTodos, createTodo, updateTodo, deleteTodo } from '../api/todoApi';
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 
-
-// useEffect(() => {
-//   if (user) {
-//     fetchTasks();
-//   } else {
-//     setTasks([]); 
-//   }
-// }, [user]);
-
 export default function Tasks() {
   const { user } = useContext(AuthContext);
-
   const [tasks, setTasks] = useState([]);
+  const [filteredTasks, setFilteredTasks] = useState([]);
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [sortBy, setSortBy] = useState('deadline'); // 'deadline' or 'status'
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -42,6 +36,40 @@ export default function Tasks() {
     const interval = setInterval(checkAndUpdateTasks, 60000);
     return () => clearInterval(interval);
   }, [user]);
+
+  // New function to handle search and filtering
+  useEffect(() => {
+    let result = [...tasks];
+    
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(task => 
+        task.title.toLowerCase().includes(query) ||
+        task.description.toLowerCase().includes(query)
+      );
+    }
+    
+    // Status filter
+    if (statusFilter !== 'ALL') {
+      result = result.filter(task => task.status === statusFilter);
+    }
+    
+    // Sorting
+    if (sortBy === 'deadline') {
+      result.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+    } else if (sortBy === 'status') {
+      const statusOrder = {
+        'ACTIVE': 1,
+        'IN_PROGRESS': 2,
+        'COMPLETE': 4,
+        'EXPIRED': 3
+      };
+      result.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+    }
+    
+    setFilteredTasks(result);
+  }, [tasks, searchQuery, statusFilter, sortBy]);
 
   const checkAndUpdateTasks = async () => {
     const now = new Date();
@@ -116,12 +144,12 @@ export default function Tasks() {
     return deadlineDate > now;
   };
 
-  const groupTasksByStatus = () => {
+  const groupTasksByStatus = (taskList) => {
     return {
-      ACTIVE: tasks.filter(task => task.status === 'ACTIVE'),
-      IN_PROGRESS: tasks.filter(task => task.status === 'IN_PROGRESS'),
-      COMPLETE: tasks.filter(task => task.status === 'COMPLETE'),
-      EXPIRED: tasks.filter(task => task.status === 'EXPIRED')
+      ACTIVE: taskList.filter(task => task.status === 'ACTIVE'),
+      IN_PROGRESS: taskList.filter(task => task.status === 'IN_PROGRESS'),
+      COMPLETE: taskList.filter(task => task.status === 'COMPLETE'),
+      EXPIRED: taskList.filter(task => task.status === 'EXPIRED')
     };
   };
 
@@ -305,7 +333,7 @@ export default function Tasks() {
                 </div>
               </>
             )}
-          </div>
+            </div>
         </div>
       </div>
     );
@@ -329,11 +357,9 @@ export default function Tasks() {
     );
   };
 
-  const groupedTasks = groupTasksByStatus();
-
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-5xl mx-auto px-4">
+      <div className="w-full mx-auto px-4">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="p-6 bg-gradient-to-r from-indigo-600 to-blue-600">
             <div className="flex justify-between items-center">
@@ -354,6 +380,49 @@ export default function Tasks() {
                 {showNewTaskForm ? <X className="w-5 h-5" /> : <span>+</span>}
                 {showNewTaskForm ? 'Cancel' : 'New Task'}
               </button>
+            </div>
+          </div>
+
+          {/* Search and filter controls */}
+          <div className="p-4 border-b bg-gray-50">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="relative">
+                <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search tasks..."
+                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Filter className="w-5 h-5 text-gray-400" />
+                <select
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option value="ALL">All Status</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="COMPLETE">Complete</option>
+                  <option value="EXPIRED">Expired</option>
+                </select>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <SortDesc className="w-5 h-5 text-gray-400" />
+                <select
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                >
+                  <option value="deadline">Sort by Deadline</option>
+                  <option value="status">Sort by Status</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -473,48 +542,40 @@ export default function Tasks() {
               </div>
             ) : (
               <>
-                {tasks.length === 0 ? (
+                {filteredTasks.length === 0 ? (
                   <div className="text-center py-16 px-4">
                     <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Calendar className="w-8 h-8 text-indigo-600" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">No tasks yet</h3>
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                      {tasks.length === 0 ? "No tasks yet" : "No matching tasks found"}
+                    </h3>
                     <p className="text-gray-500 max-w-md mx-auto mb-6">
-                      Create your first task by clicking the "New Task" button to get started organizing your workload.
+                      {tasks.length === 0 
+                        ? "Create your first task by clicking the \"New Task\" button to get started organizing your workload."
+                        : "Try adjusting your search or filter criteria to find what you're looking for."}
                     </p>
-                    {/* <button
-                      onClick={() => {
-                        setShowNewTaskForm(true);
-                        const tomorrow = new Date();
-                        tomorrow.setDate(tomorrow.getDate() + 1);
-                        const tomorrowString = tomorrow.toISOString().split('T')[0];
-                        setNewTask(prev => ({...prev, deadline: tomorrowString}));
-                      }}
-                      className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-200 font-medium inline-flex items-center gap-2"
-                    >
-                      <span>+</span> Create First Task
-                    </button> */}
                   </div>
                 ) : (
                   <div>
                     <StatusSection 
                       title="Active Tasks" 
-                      tasks={groupedTasks.ACTIVE}
+                      tasks={groupTasksByStatus(filteredTasks).ACTIVE}
                       icon={<Tag className="w-5 h-5" />}
                     />
                     <StatusSection 
                       title="In Progress" 
-                      tasks={groupedTasks.IN_PROGRESS}
+                      tasks={groupTasksByStatus(filteredTasks).IN_PROGRESS}
                       icon={<RotateCcw className="w-5 h-5" />}
                     />
                     <StatusSection 
                       title="Completed" 
-                      tasks={groupedTasks.COMPLETE}
+                      tasks={groupTasksByStatus(filteredTasks).COMPLETE}
                       icon={<CheckCircle2 className="w-5 h-5" />}
                     />
                     <StatusSection 
                       title="Expired" 
-                      tasks={groupedTasks.EXPIRED}
+                      tasks={groupTasksByStatus(filteredTasks).EXPIRED}
                       icon={<AlarmClock className="w-5 h-5" />}
                     />
                   </div>
