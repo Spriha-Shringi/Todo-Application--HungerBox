@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, Check, Loader2, Edit, Trash2, X } from 'lucide-react';
+import { Calendar, Clock, Check, Loader2, Edit, Trash2, X, AlertCircle, CheckCircle2, RotateCcw, AlarmClock, Tag } from 'lucide-react';
 import { getTodos, createTodo, updateTodo, deleteTodo } from '../api/todoApi';
 
 export default function Tasks() {
@@ -7,20 +7,22 @@ export default function Tasks() {
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
   const [newTask, setNewTask] = useState({
     title: '',
-    // description: '',
+    description: '',
     deadline: '',
     deadlineTime: ''
   });
   const [editingTask, setEditingTask] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // const deltry=({task}){
-    
-  // }
+  const [error, setError] = useState('');
+  
+  const getTodayString = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
 
   useEffect(() => {
     fetchTasks();
-    const interval = setInterval(checkAndUpdateTasks, 60000); // Check every minute
+    const interval = setInterval(checkAndUpdateTasks, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -34,7 +36,6 @@ export default function Tasks() {
       return task;
     });
 
-    // Update expired tasks in bulk
     const expiredTasks = updatedTasks.filter(
       task => task.status === 'EXPIRED' && 
       tasks.find(t => t.id === task._id)?.status !== 'EXPIRED'
@@ -53,12 +54,7 @@ export default function Tasks() {
     try {
       const data = await getTodos();
       setTasks(data);
-      // console.log("data length " + data.length);
-      // data.map((task) => (
-      //   // key={task._id} task={task} 
-      //   console.log(task.title +"the id is" + task._id)
-      // ))
-      checkAndUpdateTasks(); // Check for expired tasks immediately after fetching
+      checkAndUpdateTasks();
     } catch (error) {
       console.error('Error fetching tasks:', error);
     }
@@ -91,133 +87,184 @@ export default function Tasks() {
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
-    if (days > 0) return `${days} days ${hours} hours remaining`;
-    if (hours > 0) return `${hours} hours ${minutes} minutes remaining`;
-    return `${minutes} minutes remaining`;
+    if (days > 0) return `${days}d ${hours}h left`;
+    if (hours > 0) return `${hours}h ${minutes}m left`;
+    return `${minutes}m left`;
+  };
+
+  const validateDeadline = (dateStr, timeStr) => {
+    if (!dateStr) return false;
+    const now = new Date();
+    const deadlineDate = new Date(`${dateStr}T${timeStr || '23:59'}:00`);
+    return deadlineDate > now;
+  };
+
+  const groupTasksByStatus = () => {
+    return {
+      ACTIVE: tasks.filter(task => task.status === 'ACTIVE'),
+      IN_PROGRESS: tasks.filter(task => task.status === 'IN_PROGRESS'),
+      COMPLETE: tasks.filter(task => task.status === 'COMPLETE'),
+      EXPIRED: tasks.filter(task => task.status === 'EXPIRED')
+    };
   };
 
   const TaskItem = ({ task }) => {
-    const [editedTask, setEditedTask] = useState(task);
+    const [editedTask, setEditedTask] = useState({
+      ...task,
+      description: task.description || ''
+    });
+    const [editError, setEditError] = useState('');
     const isEditing = editingTask === task._id;
     const { date, time } = formatDateTime(task.deadline);
     const timeRemaining = getTimeRemaining(task.deadline);
 
     const statusStyles = {
-      ACTIVE: 'bg-blue-100 text-blue-800',
-      IN_PROGRESS: 'bg-yellow-100 text-yellow-800',
-      COMPLETE: 'bg-green-100 text-green-800',
-      EXPIRED: 'bg-red-100 text-red-800'
+      ACTIVE: 'border-blue-500 bg-blue-50',
+      IN_PROGRESS: 'border-yellow-500 bg-yellow-50',
+      COMPLETE: 'border-green-500 bg-green-50',
+      EXPIRED: 'border-red-500 bg-red-50'
+    };
+
+    const handleSaveEdit = async () => {
+      const datePart = editedTask.deadline.split('T')[0];
+      const timePart = editedTask.deadline.split('T')[1].slice(0, 5);
+      
+      if (!validateDeadline(datePart, timePart)) {
+        setEditError('Deadline cannot be in the past');
+        return;
+      }
+      
+      setEditError('');
+      try {
+        await updateTodo(editedTask._id, {
+          title: editedTask.title,
+          description: editedTask.description,
+          deadline: editedTask.deadline,
+          status: editedTask.status
+        });
+        setEditingTask(null);
+        fetchTasks();
+      } catch (error) {
+        console.error("Error updating task:", error);
+        setEditError('Failed to update task');
+      }
     };
 
     return (
-      <div className={`bg-white border rounded-lg shadow-sm transition-all duration-200 ${task.status === 'EXPIRED' ? 'border-red-200' : 'hover:shadow-md'}`}>
+      <div className={`border-l-4 ${statusStyles[task.status]} bg-white rounded-lg shadow-sm`}>
         <div className="p-6">
           <div className="flex flex-col gap-4">
             {isEditing ? (
               <div className="space-y-4">
+                <div className="flex justify-end">
+                  <span className={`text-sm font-medium ${task.status === 'EXPIRED' ? 'text-red-600' : 'text-blue-600'} bg-gray-50 px-3 py-1 rounded-full`}>
+                    {timeRemaining}
+                  </span>
+                </div>
                 <input
                   type="text"
                   value={editedTask.title}
                   onChange={(e) => setEditedTask({...editedTask, title: e.target.value})}
-                  className="w-full p-2 border rounded-lg"
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Task title"
                 />
-                {/* <textarea
+                <textarea
                   value={editedTask.description}
                   onChange={(e) => setEditedTask({...editedTask, description: e.target.value})}
-                  className="w-full p-2 border rounded-lg min-h-[100px]"
+                  className="w-full p-2 border rounded-lg min-h-[100px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Task description"
-                /> */}
+                />
                 <div className="grid grid-cols-2 gap-4">
-                  <input
-                    type="date"
-                    value={editedTask.deadline.split('T')[0]}
-                    onChange={(e) => setEditedTask({
-                      ...editedTask, 
-                      deadline: `${e.target.value}T${editedTask.deadline.split('T')[1]}`
-                    })}
-                    className="p-2 border rounded-lg"
-                  />
-                  <input
-                    type="time"
-                    value={editedTask.deadline.split('T')[1].slice(0, 5)}
-                    onChange={(e) => setEditedTask({
-                      ...editedTask, 
-                      deadline: `${editedTask.deadline.split('T')[0]}T${e.target.value}:00`
-                    })}
-                    className="p-2 border rounded-lg"
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <Calendar className="w-4 h-4 inline mr-1" />
+                      {date}
+                    </label>
+                    <input
+                      type="date"
+                      min={getTodayString()}
+                      value={editedTask.deadline.split('T')[0]}
+                      onChange={(e) => setEditedTask({
+                        ...editedTask, 
+                        deadline: `${e.target.value}T${editedTask.deadline.split('T')[1]}`
+                      })}
+                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <Clock className="w-4 h-4 inline mr-1" />
+                      {time}
+                    </label>
+                    <input
+                      type="time"
+                      value={editedTask.deadline.split('T')[1].slice(0, 5)}
+                      onChange={(e) => setEditedTask({
+                        ...editedTask, 
+                        deadline: `${editedTask.deadline.split('T')[0]}T${e.target.value}:00`
+                      })}
+                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+                {editError && (
+                  <div className="text-red-500 flex items-center gap-1.5 text-sm bg-red-50 p-2 rounded-md">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{editError}</span>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveEdit}
+                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-200 text-sm flex items-center gap-1.5 font-medium"
+                  >
+                    <Check className="w-4 h-4" /> Save Changes
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingTask(null);
+                      setEditError('');
+                    }}
+                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-200 text-sm flex items-center gap-1.5 font-medium"
+                  >
+                    <X className="w-4 h-4" /> Cancel
+                  </button>
                 </div>
               </div>
             ) : (
               <>
                 <div className="flex items-start justify-between">
-                  <div>
+                  <div className="flex-1">
+                    <div className="flex justify-end mb-2">
+                      <span className={`text-sm font-medium ${task.status === 'EXPIRED' ? 'text-red-600' : 'text-blue-600'} bg-gray-50 px-3 py-1 rounded-full`}>
+                        {timeRemaining}
+                      </span>
+                    </div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">{task.title}</h3>
-                    {/* <p className="text-gray-600 whitespace-pre-wrap">{task.description}</p> */}
+                    {task.description && (
+                      <div className="bg-gray-50 p-3 rounded-md text-gray-700 whitespace-pre-wrap mb-3 text-sm border border-gray-100">
+                        {task.description}
+                      </div>
+                    )}
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusStyles[task.status]}`}>
-                    {task.status.replace('_', ' ')}
-                  </span>
                 </div>
                 
-                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4" />
+                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 border-t pt-3">
+                  <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-md">
+                    <Calendar className="w-4 h-4 text-gray-600" />
                     <span>{date}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4" />
+                  <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-md">
+                    <Clock className="w-4 h-4 text-gray-600" />
                     <span>{time}</span>
                   </div>
-                  <span className={`text-sm font-medium ${task.status === 'EXPIRED' ? 'text-red-600' : 'text-blue-600'}`}>
-                    {timeRemaining}
-                  </span>
                 </div>
-              </>
-            )}
 
-            <div className="flex flex-wrap gap-2 mt-2">
-              {isEditing ? (
-                <>
-             <button
-  onClick={() => {
-    console.log("Before update:", editedTask); // ✅ Debugging log
-    if (!editedTask._id) {
-      console.error("Task ID is missing, cannot update!");
-      return;
-    }
-
-    updateTodo(editedTask._id, {
-      title: editedTask.title,
-      description: editedTask.description,
-      deadline: editedTask.deadline,
-      status: editedTask.status
-    }).then(() => {
-      console.log("Task updated successfully"); // ✅ Debugging log
-      setEditingTask(null);
-      fetchTasks(); // Ensure tasks reload after update
-    }).catch(error => console.error("Error updating task:", error));
-  }}
-  className="px-3 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-200 text-sm flex items-center gap-1"
->
-  <Check className="w-4 h-4" /> Save
-</button>
-
-
-                  <button
-                    onClick={() => setEditingTask(null)}
-                    className="px-3 py-1.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-200 text-sm flex items-center gap-1"
-                  >
-                    <X className="w-4 h-4" /> Cancel
-                  </button>
-                </>
-              ) : (
-                <>
+                <div className="flex flex-wrap gap-2 mt-2">
                   <select
                     value={task.status}
                     onChange={(e) => updateTodo(task._id, { status: e.target.value }).then(fetchTasks)}
-                    className="px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                    className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                     disabled={task.status === 'EXPIRED'}
                   >
                     <option value="ACTIVE">Active</option>
@@ -227,73 +274,107 @@ export default function Tasks() {
                   </select>
                   <button 
                     onClick={() => setEditingTask(task._id)}
-                    className="px-3 py-1.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition duration-200 text-sm flex items-center gap-1"
+                    className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-200 text-sm flex items-center gap-1.5 font-medium"
                     disabled={task.status === 'EXPIRED'}
                   >
                     <Edit className="w-4 h-4" /> Edit
                   </button>
                   <button 
                     onClick={() => deleteTodo(task._id).then(fetchTasks)}
-                    className="px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-200 text-sm flex items-center gap-1"
+                    className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-200 text-sm flex items-center gap-1.5 font-medium"
                   >
                     <Trash2 className="w-4 h-4" /> Delete
                   </button>
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
     );
   };
 
+  const StatusSection = ({ title, tasks, icon }) => {
+    if (tasks.length === 0) return null;
+    
+    return (
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-4 border-b pb-2">
+          {icon}
+          <h2 className="text-lg font-semibold">{title}</h2>
+        </div>
+        <div className="space-y-4">
+          {tasks.map(task => (
+            <TaskItem key={task._id} task={task} />
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const groupedTasks = groupTasksByStatus();
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-5xl mx-auto px-4">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="p-6 bg-gradient-to-r from-blue-600 to-blue-700">
+          <div className="p-6 bg-gradient-to-r from-indigo-600 to-blue-600">
             <div className="flex justify-between items-center">
               <h1 className="text-2xl font-bold text-white">Task Management</h1>
               <button 
-                onClick={() => setShowNewTaskForm(!showNewTaskForm)}
-                className="px-4 py-2 bg-white text-blue-600 rounded-lg shadow hover:bg-blue-50 transition duration-200 font-medium"
+                onClick={() => {
+                  setShowNewTaskForm(!showNewTaskForm);
+                  setError('');
+                  if (!showNewTaskForm) {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    const tomorrowString = tomorrow.toISOString().split('T')[0];
+                    setNewTask(prev => ({...prev, deadline: tomorrowString}));
+                  }
+                }}
+                className="px-4 py-2 bg-white text-indigo-600 rounded-lg shadow hover:bg-blue-50 transition duration-200 font-medium flex items-center gap-2"
               >
-                {showNewTaskForm ? 'Cancel' : '+ New Task'}
+                {showNewTaskForm ? <X className="w-5 h-5" /> : <span>+</span>}
+                {showNewTaskForm ? 'Cancel' : 'New Task'}
               </button>
             </div>
           </div>
 
           <div className="p-6">
             {showNewTaskForm && (
-              <div className="mb-8 bg-blue-50 rounded-lg p-6 border border-blue-100">
-                <h2 className="text-xl font-semibold mb-4 text-blue-800">Create New Task</h2>
+              <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100 shadow-sm">
+                <h2 className="text-xl font-semibold mb-4 text-indigo-800 flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Create New Task
+                </h2>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                     <input
                       type="text"
                       placeholder="Enter task title"
-                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       value={newTask.title}
                       onChange={(e) => setNewTask({...newTask, title: e.target.value})}
                     />
                   </div>
                   <div>
-                    {/* <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                     <textarea
                       placeholder="Enter task description"
                       rows="3"
-                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       value={newTask.description}
                       onChange={(e) => setNewTask({...newTask, description: e.target.value})}
-                    /> */}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
                       <input
                         type="date"
-                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        min={getTodayString()}
+                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                         value={newTask.deadline}
                         onChange={(e) => setNewTask({...newTask, deadline: e.target.value})}
                       />
@@ -302,35 +383,60 @@ export default function Tasks() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
                       <input
                         type="time"
-                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                         value={newTask.deadlineTime}
                         onChange={(e) => setNewTask({...newTask, deadlineTime: e.target.value})}
                       />
                     </div>
                   </div>
+                  {error && (
+                    <div className="text-red-500 flex items-center gap-1.5 text-sm bg-red-50 p-3 rounded-md">
+                      <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                      <span>{error}</span>
+                    </div>
+                  )}
                   <button
                     onClick={() => {
-                      if (newTask.title.trim()) {
-                        const deadline = `${newTask.deadline}T${newTask.deadlineTime || '23:59'}:00`;
-                        createTodo({
-                          title: newTask.title,
-                          // description: newTask.description,
-                          status: 'ACTIVE',
-                          deadline
-                        }).then(() => {
-                          setNewTask({
-                            title: '',
-                            // description: '',
-                            deadline: '',
-                            deadlineTime: ''
-                          });
-                          setShowNewTaskForm(false);
-                          fetchTasks();
-                        });
+                      if (!newTask.title.trim()) {
+                        setError('Title is required');
+                        return;
                       }
+                      
+                      if (!newTask.deadline) {
+                        setError('Deadline date is required');
+                        return;
+                      }
+                      
+                      const timeStr = newTask.deadlineTime || '23:59';
+                      
+                      if (!validateDeadline(newTask.deadline, timeStr)) {
+                        setError('Deadline cannot be in the past');
+                        return;
+                      }
+                      
+                      const deadline = `${newTask.deadline}T${timeStr}:00`;
+                      
+                      createTodo({
+                        title: newTask.title,
+                        description: newTask.description,
+                        status: 'ACTIVE',
+                        deadline
+                      }).then(() => {
+                        setNewTask({
+                          title: '',
+                          description: '',
+                          deadline: '',
+                          deadlineTime: ''
+                        });
+                        setShowNewTaskForm(false);
+                        setError('');
+                        fetchTasks();
+                      }).catch(err => {
+                        console.error("Error creating task:", err);
+                        setError('Failed to create task');
+                      });
                     }}
-                    disabled={!newTask.title.trim()}
-                    className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 transition duration-200 font-medium shadow-sm"
                   >
                     Create Task
                   </button>
@@ -339,23 +445,61 @@ export default function Tasks() {
             )}
 
             {loading ? (
-              <div className="flex justify-center items-center py-8">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              <div className="flex justify-center items-center py-12">
+                <div className="text-center">
+                  <Loader2 className="w-10 h-10 animate-spin text-indigo-600 mx-auto mb-4" />
+                  <p className="text-gray-500">Loading your tasks...</p>
+                </div>
               </div>
             ) : (
-              <div className="space-y-4">
+              <>
                 {tasks.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No tasks yet. Create a new task to get started!
+                  <div className="text-center py-16 px-4">
+                    <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Calendar className="w-8 h-8 text-indigo-600" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">No tasks yet</h3>
+                    <p className="text-gray-500 max-w-md mx-auto mb-6">
+                      Create your first task by clicking the "New Task" button to get started organizing your workload.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setShowNewTaskForm(true);
+                        const tomorrow = new Date();
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        const tomorrowString = tomorrow.toISOString().split('T')[0];
+                        setNewTask(prev => ({...prev, deadline: tomorrowString}));
+                      }}
+                      className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-200 font-medium inline-flex items-center gap-2"
+                    >
+                      <span>+</span> Create First Task
+                    </button>
                   </div>
                 ) : (
-                  // console.log("the id is" + tasks.id)
-                  tasks.map((task) => (
-                    <TaskItem key={task._id} task={task} />
-                    // console.log("the id is" + task._id)
-                  ))
+                  <div>
+                    <StatusSection 
+                      title="Active Tasks" 
+                      tasks={groupedTasks.ACTIVE}
+                      icon={<Tag className="w-5 h-5" />}
+                    />
+                    <StatusSection 
+                      title="In Progress" 
+                      tasks={groupedTasks.IN_PROGRESS}
+                      icon={<RotateCcw className="w-5 h-5" />}
+                    />
+                    <StatusSection 
+                      title="Completed" 
+                      tasks={groupedTasks.COMPLETE}
+                      icon={<CheckCircle2 className="w-5 h-5" />}
+                    />
+                    <StatusSection 
+                      title="Expired" 
+                      tasks={groupedTasks.EXPIRED}
+                      icon={<AlarmClock className="w-5 h-5" />}
+                    />
+                  </div>
                 )}
-              </div>
+              </>
             )}
           </div>
         </div>
