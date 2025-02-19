@@ -11,7 +11,7 @@ export default function Tasks() {
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [sortBy, setSortBy] = useState('deadline'); // 'deadline' or 'status'
+  const [sortBy, setSortBy] = useState('deadline');
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -31,17 +31,15 @@ export default function Tasks() {
     if (user) {
       fetchTasks();
     } else {
-      setTasks([]); 
+      setTasks([]);
     }
     const interval = setInterval(checkAndUpdateTasks, 60000);
     return () => clearInterval(interval);
   }, [user]);
 
-  // New function to handle search and filtering
   useEffect(() => {
     let result = [...tasks];
     
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(task => 
@@ -50,12 +48,10 @@ export default function Tasks() {
       );
     }
     
-    // Status filter
     if (statusFilter !== 'ALL') {
       result = result.filter(task => task.status === statusFilter);
     }
     
-    // Sorting
     if (sortBy === 'deadline') {
       result.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
     } else if (sortBy === 'status') {
@@ -87,10 +83,19 @@ export default function Tasks() {
     );
 
     if (expiredTasks.length > 0) {
-      await Promise.all(expiredTasks.map(task => 
+      const updatedTasksResponses = await Promise.all(expiredTasks.map(task => 
         updateTodo(task._id, { status: 'EXPIRED' })
       ));
-      setTasks(updatedTasks);
+      setTasks(prevTasks => {
+        const newTasks = [...prevTasks];
+        updatedTasksResponses.forEach(updatedTask => {
+          const index = newTasks.findIndex(t => t._id === updatedTask._id);
+          if (index !== -1) {
+            newTasks[index] = updatedTask;
+          }
+        });
+        return newTasks;
+      });
     }
   };
 
@@ -156,12 +161,23 @@ export default function Tasks() {
   const TaskItem = ({ task }) => {
     const [editedTask, setEditedTask] = useState({
       ...task,
-      description: task.description || ''
+      description: task.description || '',
+      deadline: task.deadline
     });
     const [editError, setEditError] = useState('');
     const isEditing = editingTask === task._id;
     const { date, time } = formatDateTime(task.deadline);
     const timeRemaining = getTimeRemaining(task.deadline);
+
+    useEffect(() => {
+      if (isEditing) {
+        setEditedTask({
+          ...task,
+          description: task.description || '',
+          deadline: task.deadline
+        });
+      }
+    }, [isEditing, task]);
 
     const statusStyles = {
       ACTIVE: 'border-blue-500 bg-blue-50',
@@ -181,17 +197,40 @@ export default function Tasks() {
       
       setEditError('');
       try {
-        await updateTodo(editedTask._id, {
+        const updatedTask = await updateTodo(editedTask._id, {
           title: editedTask.title,
           description: editedTask.description,
           deadline: editedTask.deadline,
           status: editedTask.status
         });
+        
+        setTasks(prevTasks => 
+          prevTasks.map(t => t._id === updatedTask._id ? updatedTask : t)
+        );
         setEditingTask(null);
-        fetchTasks();
       } catch (error) {
         console.error("Error updating task:", error);
         setEditError('Failed to update task');
+      }
+    };
+
+    const handleStatusChange = async (newStatus) => {
+      try {
+        const updatedTask = await updateTodo(task._id, { status: newStatus });
+        setTasks(prevTasks => 
+          prevTasks.map(t => t._id === updatedTask._id ? updatedTask : t)
+        );
+      } catch (error) {
+        console.error("Error updating task status:", error);
+      }
+    };
+
+    const handleDelete = async () => {
+      try {
+        await deleteTodo(task._id);
+        setTasks(prevTasks => prevTasks.filter(t => t._id !== task._id));
+      } catch (error) {
+        console.error("Error deleting task:", error);
       }
     };
 
@@ -223,31 +262,37 @@ export default function Tasks() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       <Calendar className="w-4 h-4 inline mr-1" />
-                      {date}
+                      Date
                     </label>
                     <input
                       type="date"
                       min={getTodayString()}
                       value={editedTask.deadline.split('T')[0]}
-                      onChange={(e) => setEditedTask({
-                        ...editedTask, 
-                        deadline: `${e.target.value}T${editedTask.deadline.split('T')[1]}`
-                      })}
+                      onChange={(e) => {
+                        const currentTime = editedTask.deadline.split('T')[1];
+                        setEditedTask({
+                          ...editedTask,
+                          deadline: `${e.target.value}T${currentTime}`
+                        });
+                      }}
                       className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       <Clock className="w-4 h-4 inline mr-1" />
-                      {time}
+                      Time
                     </label>
                     <input
                       type="time"
                       value={editedTask.deadline.split('T')[1].slice(0, 5)}
-                      onChange={(e) => setEditedTask({
-                        ...editedTask, 
-                        deadline: `${editedTask.deadline.split('T')[0]}T${e.target.value}:00`
-                      })}
+                      onChange={(e) => {
+                        const currentDate = editedTask.deadline.split('T')[0];
+                        setEditedTask({
+                          ...editedTask,
+                          deadline: `${currentDate}T${e.target.value}:00`
+                        });
+                      }}
                       className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -308,7 +353,7 @@ export default function Tasks() {
                 <div className="flex flex-wrap gap-2 mt-2">
                   <select
                     value={task.status}
-                    onChange={(e) => updateTodo(task._id, { status: e.target.value }).then(fetchTasks)}
+                    onChange={(e) => handleStatusChange(e.target.value)}
                     className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                     disabled={task.status === 'EXPIRED'}
                   >
@@ -319,13 +364,17 @@ export default function Tasks() {
                   </select>
                   <button 
                     onClick={() => setEditingTask(task._id)}
-                    className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-200 text-sm flex items-center gap-1.5 font-medium"
+                    className={`px-3 py-2 bg-blue-500 text-white rounded-lg transition duration-200 text-sm flex items-center gap-1.5 font-medium ${
+                      task.status === 'EXPIRED' 
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : 'hover:bg-blue-600'
+                    }`}
                     disabled={task.status === 'EXPIRED'}
                   >
                     <Edit className="w-4 h-4" /> Edit
                   </button>
                   <button 
-                    onClick={() => deleteTodo(task._id).then(fetchTasks)}
+                    onClick={handleDelete}
                     className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-200 text-sm flex items-center gap-1.5 font-medium"
                   >
                     <Trash2 className="w-4 h-4" /> Delete
@@ -333,7 +382,7 @@ export default function Tasks() {
                 </div>
               </>
             )}
-            </div>
+          </div>
         </div>
       </div>
     );
@@ -383,7 +432,6 @@ export default function Tasks() {
             </div>
           </div>
 
-          {/* Search and filter controls */}
           <div className="p-4 border-b bg-gray-50">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative">
@@ -482,7 +530,7 @@ export default function Tasks() {
                     </div>
                   )}
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (!newTask.title.trim()) {
                         setError('Title is required');
                         return;
@@ -505,12 +553,15 @@ export default function Tasks() {
                       
                       const deadline = `${newTask.deadline}T${timeStr}:00`;
                       
-                      createTodo({
-                        title: newTask.title,
-                        description: newTask.description,
-                        status: 'ACTIVE',
-                        deadline
-                      }).then(() => {
+                      try {
+                        const newTaskData = await createTodo({
+                          title: newTask.title,
+                          description: newTask.description,
+                          status: 'ACTIVE',
+                          deadline
+                        });
+                        
+                        setTasks(prevTasks => [...prevTasks, newTaskData]);
                         setNewTask({
                           title: '',
                           description: '',
@@ -519,11 +570,10 @@ export default function Tasks() {
                         });
                         setShowNewTaskForm(false);
                         setError('');
-                        fetchTasks();
-                      }).catch(err => {
+                      } catch (err) {
                         console.error("Error creating task:", err);
                         setError('Failed to create task');
-                      });
+                      }
                     }}
                     className="w-full py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 transition duration-200 font-medium shadow-sm"
                   >

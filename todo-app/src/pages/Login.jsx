@@ -7,7 +7,7 @@ const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showResetForm, setShowResetForm] = useState(false);
-  const [email, setEmail] = useState('');
+  // const [email, setEmail] = useState('');
   
   const handleLogin = async () => {
     const response = await loginUser({ username, password });
