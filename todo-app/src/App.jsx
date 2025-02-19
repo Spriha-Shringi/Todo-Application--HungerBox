@@ -1,15 +1,20 @@
 import { Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Tasks from './pages/Tasks';
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/tasks" element={<Tasks />} />
-    </Routes>
+    <>
+      <Navbar />
+      <Routes>
+      <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/tasks" element={<Tasks />} />
+      </Routes>
+    </>
   );
 }
 // import { useState } from 'react'
@@ -32,7 +37,7 @@ export default function App() {
 //       </div>
 //       <h1>Vite + React</h1>
 //       <div className="card">
-//         <button onClick={() => setCount((count) => count + 1)}>
+//         <button onClick={() => setCount((count) => count + 1)}> setCount(count) => count + 1;
 //           count is {count}
 //         </button>
 //         <p>
