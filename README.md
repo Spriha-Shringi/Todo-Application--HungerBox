@@ -24,25 +24,25 @@
 |Vercel |	Deployment|
 
 
-🎯 **Installation Guide**
-🔹 1️⃣ Clone the Repository
-          git clone https://github.com/yourusername/todo-app.git
-          cd todo-app
+🎯 **Installation Guide**  
+🔹 1️⃣ Clone the Repository  
+            git clone https://github.com/yourusername/todo-app.git  
+            cd todo-app
 
-🔹 2️⃣ Install Dependencies
-          npm install
+🔹 2️⃣ Install Dependencies  
+            npm install  
 
-🔹 3️⃣ Set Up Environment Variables
-          Create a .env file in the root directory and add:
-                MONGO_URI=your_mongodb_connection_string
-                JWT_SECRET=your_jwt_secret
-                PORT=5000
+🔹 3️⃣ Set Up Environment Variables  
+              Create a .env file in the root directory and add:  
+                   MONGO_URI=your_mongodb_connection_string  
+                   JWT_SECRET=your_jwt_secret  
+                   PORT=5000  
 
-🔹 4️⃣ Start the Application
+🔹 4️⃣ Start the Application  
 
-👉 For Development
-    -Backend  ->    npm start
-    -Frontend ->    npm run dev
+👉 For Development  
+    -Backend  ->    npm start  
+    -Frontend ->    npm run dev  
      
-👉 For Production Build
-        npm run build && npm start
+👉 For Production Build  
+        npm run build && npm start  
