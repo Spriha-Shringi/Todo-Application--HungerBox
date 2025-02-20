@@ -1,19 +1,26 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+// import { resetPassword } from '../api/authApi';
 
 // Password Reset Modal Component
 const PasswordResetModal = ({ isOpen, onClose }) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
-  const handleReset = () => {
+  const handleReset = async () => {
     if (newPassword !== confirmPassword) {
       alert("Passwords don't match!");
       return;
     }
-    // Add password reset logic here
-    console.log("Password reset:", newPassword);
-    onClose();
+  
+    try {
+      // await resetPassword(user.username, newPassword);
+      // alert('Password reset successful!');
+      alert('Sorry! This functionality is coming soon!');
+      onClose();
+    } catch (error) {
+      alert('Failed to reset password. Try again.');
+    }
   };
 
   if (!isOpen) return null;
