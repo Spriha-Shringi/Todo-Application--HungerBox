@@ -12,7 +12,7 @@ export default function Register() {
       setError('Passwords do not match');
       return;
     }
-    
+    alert("Registration Successful!")
     setError('');
     await registerUser({ username, password });
     window.location.href = '/login';

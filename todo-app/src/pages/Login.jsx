@@ -11,6 +11,7 @@ const Login = () => {
   
   const handleLogin = async () => {
     const response = await loginUser({ username, password });
+    alert("Your are successfully logged in!");
     localStorage.setItem('token', response.token);
     window.location.href = '/tasks';
   };
