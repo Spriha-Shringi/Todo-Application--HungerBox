@@ -1,24 +1,23 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/auth';
+const API_URL = import.meta.env.VITE_API_URL + "/api/auth"; // Use Vite env variable
 
-// Login User and Save Token in LocalStorage
 export const loginUser = async (credentials) => {
   try {
     const response = await axios.post(`${API_URL}/login`, credentials);
-    const token = response.data.token; // Assuming the token is in response.data.token
-    console.log(token);
+    const token = response.data.token;
+    
     if (token) {
-      localStorage.setItem('token', token); // Save the token in localStorage
+      localStorage.setItem('token', token);
     }
-    return response.data; // Return the full response data, including the token
+
+    return response.data;
   } catch (error) {
     console.error('Error during login:', error);
     throw error;
   }
 };
 
-// Register User
 export const registerUser = async (userData) => {
   try {
     const response = await axios.post(`${API_URL}/register`, userData);
@@ -29,12 +28,8 @@ export const registerUser = async (userData) => {
   }
 };
 
-// Logout User and Remove Token from LocalStorage
 export const logoutUser = () => {
-  localStorage.removeItem('token'); // Remove token from localStorage on logout
+  localStorage.removeItem('token');
 };
 
-// Get Token from LocalStorage
-export const getToken = () => {
-  return localStorage.getItem('token'); // Retrieve the token from localStorage
-};
+export const getToken = () => localStorage.getItem('token');
