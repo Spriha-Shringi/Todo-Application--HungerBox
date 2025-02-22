@@ -29,6 +29,20 @@ export const registerUser = async (userData) => {
   }
 };
 
+
+export const resetPassword = async (username, password) =>{
+  console.log("Hii");
+  try{
+    console.log("Hii");
+    console.log(username
+      ,password);
+    const response = await axios.post(`${API_URL}/reset-password`,{username, password});
+    return response.data;
+  }catch(error){
+    console.error('Error during password reset:', error);
+    throw error;
+  }
+}
 // Logout User and Remove Token from LocalStorage
 export const logoutUser = () => {
   localStorage.removeItem('token'); // Remove token from localStorage on logout
