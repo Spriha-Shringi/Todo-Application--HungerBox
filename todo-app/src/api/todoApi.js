@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getToken } from './authApi';
 
-const API_URL = 'http://localhost:5000/api/todos';
+const API_URL = 'https://todo-application-hunger-box-sb97.vercel.app/api/todos';
 
 const authHeaders = () => {
   const token = localStorage.getItem('token');
@@ -24,7 +24,7 @@ export const getTodos = async () => {
   }
 
   try {
-    const response = await axios.get("http://localhost:5000/api/todos", headers);
+    const response = await axios.get("https://todo-application-hunger-box-sb97.vercel.app/api/todos", headers);
     return response.data; 
   } catch (error) {
     console.error("Error fetching tasks:", error.response?.data || error.message);

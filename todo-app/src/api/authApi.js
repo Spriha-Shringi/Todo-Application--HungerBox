@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/auth';
+const API_URL = 'https://todo-application-hunger-box-sb97.vercel.app/api/auth';
 
 // Login User and Save Token in LocalStorage
 export const loginUser = async (credentials) => {
