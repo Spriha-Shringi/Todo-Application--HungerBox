@@ -26,7 +26,7 @@
 
 🎯 **Installation Guide**  
 🔹 1️⃣ Clone the Repository          
-            `git clone https://github.com/yourusername/todo-app.git  `  
+            `git clone https://github.com/yourusername/todo-app.git`  
             `cd todo-app`
 
 🔹 2️⃣ Install Dependencies  
@@ -43,7 +43,8 @@
 
 
 👉 For Development  
-    -Backend  ->    `npm start`  
+    -Frontend ->    `npm run dev`  
+    -Backend  ->  Go to todo-backend folder(use cd todo-backend) and then  `npm start`  
     -Frontend ->    `npm run dev`  
      
 👉 For Production Build  
