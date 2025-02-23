@@ -5,11 +5,12 @@ const User = require('../models/User');
 
 const router = express.Router();
 
-// Register User
+
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
 
   try {
+    
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -22,22 +23,30 @@ router.post('/register', async (req, res) => {
 });
 
 
+router.get('/users/check', async (req, res) => {
+  const { username } = req.query;
+
+  try {
+    const user = await User.findOne({ username });
+    res.json({ exists: !!user });
+  } catch (error) {
+    res.status(500).json({ error: 'Error checking user' });
+  }
+});
 router.post('/reset-password', async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    // Find the user by username
+
     const user = await User.findOne({ username });
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Hash the new password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
 
-    // Save the updated user
     await user.save();
 
     res.status(200).json({ message: 'Password changed successfully' });
@@ -47,7 +56,7 @@ router.post('/reset-password', async (req, res) => {
 });
 
 
-// Login User
+
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 

@@ -8,7 +8,7 @@ const authHeaders = () => {
 
   if (!token) {
     console.error("No token found! User must be logged in.");
-    return null; // Returning null prevents sending a bad request
+    return null; 
   }
 
   return { headers: { Authorization: `Bearer ${token}` } };
@@ -16,11 +16,11 @@ const authHeaders = () => {
 
 
 export const getTodos = async () => {
-  const headers = authHeaders();  // Get authorization headers
+  const headers = authHeaders();  
 
   if (!headers) {
     console.warn("Skipping API request: No token available.");
-    return [];  // Return empty array instead of making a request
+    return [];  
   }
 
   try {
@@ -39,10 +39,10 @@ export const createTodo = async (todo) => {
 };
 
 export const updateTodo = async (id, updates) => {
-  console.log(`Updating task ${id} with`, updates); // ✅ Debugging log
+  console.log(`Updating task ${id} with`, updates); 
   try {
     const response = await axios.put(`${API_URL}/${id}`, updates, authHeaders());
-    console.log("Update response:", response.data); // ✅ Debugging log
+    console.log("Update response:", response.data); 
     return response.data;
   } catch (error) {
     console.error("Error updating task:", error.response?.data || error.message);

@@ -1,9 +1,9 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { resetPassword } from '../api/authApi';
-// import { resetPassword } from '../api/authApi';
 
-// Password Reset Modal Component
+
+
 const PasswordResetModal = ({ isOpen, onClose }) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -21,8 +21,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
 
       await resetPassword(user.username, newPassword);
       console.log(newPassword);
-      // alert('Password reset successful!');
-      // alert('Sorry! This functionality is coming soon!');
+      alert('Password reset successful!');
       onClose();
     } catch (error) {
       alert('Failed to reset password. Try again.');
@@ -68,7 +67,7 @@ const PasswordResetModal = ({ isOpen, onClose }) => {
   );
 };
 
-// Navbar Component
+
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
   const [showResetModal, setShowResetModal] = useState(false);
