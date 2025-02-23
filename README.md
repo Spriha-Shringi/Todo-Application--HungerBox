@@ -35,11 +35,16 @@
 🔹 3️⃣ Set Up Environment Variables
               Create a .env file in the root directory(todo-app) and add:  
                    `VITE_API_URL=https://add-your-backend-link-here.app/api`
+Right now , you need to change API_URL at 2-3 places at the frontend as it is deployed now.
+
 
               Create a .env file in the todo-backend directory and add:  
                    `MONGO_URI=your_mongodb_connection_string`
                    `JWT_SECRET=your_jwt_secret`  
-                   `PORT=5000`  
+                   `PORT=5000`.  
+                   server.js also needs some changes, just comment out the cors-options_part which is in use right now and uncomment the commented line for using cors().
+                
+
 🔹 4️⃣ Start the Application  
 
 
