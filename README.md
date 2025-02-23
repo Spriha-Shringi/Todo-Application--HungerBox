@@ -32,12 +32,14 @@
 🔹 2️⃣ Install Dependencies  
             `npm install`  
 
-🔹 3️⃣ Set Up Environment Variables  
-              Create a .env file in the root directory and add:  
-                   `MONGO_URI=your_mongodb_connection_string`  
+🔹 3️⃣ Set Up Environment Variables
+              Create a .env file in the root directory(todo-app) and add:  
+                   `VITE_API_URL=https://add-your-backend-link-here.app/api`
+
+              Create a .env file in the todo-backend directory and add:  
+                   `MONGO_URI=your_mongodb_connection_string`
                    `JWT_SECRET=your_jwt_secret`  
                    `PORT=5000`  
-
 🔹 4️⃣ Start the Application  
 
 

@@ -41,7 +41,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// Delete Todo
+
 router.delete('/:id', authMiddleware, async (req, res) => {
   await Todo.findByIdAndDelete(req.params.id);
   res.json({ message: 'Todo deleted' });
