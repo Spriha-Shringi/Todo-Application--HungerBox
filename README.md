@@ -25,26 +25,27 @@
 
 
 🎯 **Installation Guide**  
-🔹 1️⃣ Clone the Repository  
-            git clone https://github.com/yourusername/todo-app.git  
-            cd todo-app
+🔹 1️⃣ Clone the Repository          
+            `git clone https://github.com/yourusername/todo-app.git`  
+            `cd todo-app`
 
 🔹 2️⃣ Install Dependencies  
-            npm install  
+            `npm install`  
 
 🔹 3️⃣ Set Up Environment Variables  
               Create a .env file in the root directory and add:  
-                   MONGO_URI=your_mongodb_connection_string  
-                   JWT_SECRET=your_jwt_secret  
-                   PORT=5000  
+                   `MONGO_URI=your_mongodb_connection_string`  
+                   `JWT_SECRET=your_jwt_secret`  
+                   `PORT=5000`  
 
 🔹 4️⃣ Start the Application  
 
 
 
 👉 For Development  
-    -Backend  ->    npm start  
-    -Frontend ->    npm run dev  
+    -Frontend ->    `npm run dev`  
+    -Backend  ->  Go to todo-backend folder(use cd todo-backend) and then  `npm start`  
+    -Frontend ->    `npm run dev`  
      
 👉 For Production Build  
         npm run build && npm start  
@@ -64,7 +65,7 @@
 ![Screenshot (34)](https://github.com/user-attachments/assets/749e99ba-eaea-4129-b964-13ab7ae759a4)
 ![Screenshot (35)](https://github.com/user-attachments/assets/b9874151-f11a-4ab0-8980-003452f0ab2a)
 ![Screenshot (37)](https://github.com/user-attachments/assets/ef180b65-837d-438a-a03a-131806a3a301)
-
+![Screenshot (42)](https://github.com/user-attachments/assets/a4dec6b3-93f0-49dd-a80a-6a6318d5bafd)
 
 
 
