@@ -32,7 +32,7 @@
 🔹 2️⃣ Install Dependencies  
             `npm install`  
 
-🔹 3️⃣ Set Up Environment Variables
+🔹 3️⃣ Set Up Environment Variables.   
               Create a .env file in the root directory(todo-app) and add:  
                    `VITE_API_URL=https://add-your-backend-link-here.app/api`
 Right now , you need to change API_URL at 2-3 places at the frontend as it is deployed now.
